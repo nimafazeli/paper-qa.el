@@ -60,10 +60,11 @@
   (interactive)
   (let* ((credentials (paper-qa-get-zotero-credentials))
          (user-id (car credentials))
-         (api-key (cadr credentials)))
-    (unless (and user-id api-key)
-      (error "Zotero credentials not found. Please set them in .authinfo or customize paper-qa-zotero-user-id and paper-qa-zotero-api-key"))
-    (setq paper-qa-kernel (jupyter-run-repl paper-qa-python-command nil nil))
+         (api-key (cadr credentials))
+         (jupyter-command (expand-file-name "Scripts/jupyter" paper-qa-python-venv)))
+    (unless (file-exists-p jupyter-command)
+      (error "Jupyter executable not found. Please ensure it's installed in %s" paper-qa-python-venv))
+    (setq paper-qa-kernel (jupyter-run-repl jupyter-command nil nil))
     (jupyter-repl-associate-buffer paper-qa-kernel)
     (jupyter-send-code-cell paper-qa-kernel
      (format "import os
