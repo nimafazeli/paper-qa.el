@@ -27,6 +27,11 @@
   :type 'string
   :group 'paper-qa)
 
+(defcustom paper-qa-python-venv "~/.emacs_venv"
+  "Path to Python virtual environment for paper-qa."
+  :type 'string
+  :group 'paper-qa)
+
 (defvar paper-qa-kernel nil
   "Jupyter kernel for paper-qa interactions.")
 
@@ -81,7 +86,26 @@ collections = get_collections()" user-id api-key))
     (setq paper-qa-zotero-collections
           (jupyter-eval "collections" :cell-type :code))))
 
-;; ... (rest of the functions remain the same as in the previous version) ...
+(defun paper-qa-query (query)
+  "Query paper-qa with QUERY."
+  (interactive "sEnter your query: ")
+  (unless paper-qa-docs
+    (error "Paper-qa not initialized. Run M-x paper-qa-init first"))
+  (jupyter-send-code-cell paper-qa-kernel
+   (format "result = docs.query('%s')
+print(result.answer)" query))
+  (jupyter-repl-pop-to-buffer))
+
+(defun paper-qa-fetch-by-collection ()
+  "Fetch papers from a Zotero collection."
+  (interactive)
+  (unless paper-qa-zotero-collections
+    (error "Zotero collections not fetched. Run M-x paper-qa-init first"))
+  (let ((collection (completing-read "Select collection: " paper-qa-zotero-collections)))
+    (jupyter-send-code-cell paper-qa-kernel
+     (format "for item in zotero_db.iterate(collection_name='%s', limit=20):
+    docs.add(item.pdf, docname=item.key)
+print('Added papers from collection \"%s\" to the Docs object.')" collection collection))))
 
 (provide 'paper-qa)
 
