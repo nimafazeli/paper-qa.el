@@ -1,11 +1,13 @@
 ;;; paper-qa.el --- Interface for paper-qa in Emacs -*- lexical-binding: t; -*-
 
 ;; Author: Your Name
-;; Version: 0.5
+;; Version: 0.1
 ;; Package-Requires: ((emacs "27.1") (jupyter "0.8.2") (helm "3.8.0"))
+;; Keywords: tools
+;; URL: https://github.com/nimafazeli/paper-qa.el
 
 ;;; Commentary:
-;; This package provides an interface to paper-qa within Emacs, including Zotero integration.
+;; This package provides an interface to paper-qa within Emacs.
 
 ;;; Code:
 
@@ -50,12 +52,8 @@
   "List of Zotero collections.")
 
 (defun paper-qa-get-zotero-credentials ()
-  "Retrieve Zotero credentials from .authinfo or custom variables."
-  (let* ((auth-info (auth-source-search :host "api.zotero.org" :require '(:user :secret) :max 1))
-         (stored-user (plist-get (car auth-info) :user))
-         (stored-key (funcall (plist-get (car auth-info) :secret))))
-    (list (or stored-user paper-qa-zotero-user-id (getenv "ZOTERO_USER_ID"))
-          (or stored-key paper-qa-zotero-api-key (getenv "ZOTERO_API_KEY")))))
+  "Retrieve Zotero credentials from custom variables."
+  (list paper-qa-zotero-user-id paper-qa-zotero-api-key))
 
 (defun paper-qa-init ()
   "Initialize paper-qa kernel and Zotero integration."
