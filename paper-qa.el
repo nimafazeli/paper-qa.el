@@ -61,9 +61,9 @@
   (let* ((credentials (paper-qa-get-zotero-credentials))
          (user-id (car credentials))
          (api-key (cadr credentials))
-         (jupyter-command (expand-file-name "Scripts/jupyter" paper-qa-python-venv)))
-    (unless (file-exists-p jupyter-command)
-      (error "Jupyter executable not found. Please ensure it's installed in %s" paper-qa-python-venv))
+         (jupyter-command (executable-find "jupyter")))
+    (unless jupyter-command
+      (error "Jupyter executable not found. Please ensure it's installed and in your PATH"))
     (setq paper-qa-kernel (jupyter-run-repl jupyter-command nil nil))
     (jupyter-repl-associate-buffer paper-qa-kernel)
     (jupyter-send-code-cell paper-qa-kernel
