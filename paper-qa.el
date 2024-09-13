@@ -61,10 +61,12 @@
   (let* ((credentials (paper-qa-get-zotero-credentials))
          (user-id (car credentials))
          (api-key (cadr credentials))
-         (jupyter-command (executable-find "jupyter")))
+         (jupyter-command (executable-find "jupyter"))
+         (python-kernel "python3"))
     (unless jupyter-command
       (error "Jupyter executable not found. Please ensure it's installed and in your PATH"))
-    (setq paper-qa-kernel (jupyter-run-repl jupyter-command nil nil))
+    (setq paper-qa-kernel (jupyter-run-repl jupyter-command nil 
+                                            (list "--kernel" python-kernel)))
     (jupyter-repl-associate-buffer paper-qa-kernel)
     (jupyter-send-code-cell paper-qa-kernel
      (format "import os
