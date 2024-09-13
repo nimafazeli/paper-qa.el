@@ -1,0 +1,88 @@
+;;; paper-qa.el --- Interface for paper-qa in Emacs -*- lexical-binding: t; -*-
+
+;; Author: Your Name
+;; Version: 0.5
+;; Package-Requires: ((emacs "27.1") (jupyter "0.8.2") (helm "3.8.0"))
+
+;;; Commentary:
+;; This package provides an interface to paper-qa within Emacs, including Zotero integration.
+
+;;; Code:
+
+(require 'jupyter)
+(require 'helm)
+(require 'auth-source)
+
+(defgroup paper-qa nil
+  "Customization group for paper-qa."
+  :group 'applications)
+
+(defcustom paper-qa-zotero-user-id nil
+  "Zotero user ID for API access."
+  :type 'string
+  :group 'paper-qa)
+
+(defcustom paper-qa-zotero-api-key nil
+  "Zotero API key for API access."
+  :type 'string
+  :group 'paper-qa)
+
+(defvar paper-qa-kernel nil
+  "Jupyter kernel for paper-qa interactions.")
+
+(defvar paper-qa-python-command
+  (expand-file-name ".emacs_venv/Scripts/python.exe" (getenv "HOME"))
+  "Path to Python executable with paper-qa installed.")
+
+(defvar paper-qa-zotero-path
+  (expand-file-name "Zotero" (getenv "HOME"))
+  "Path to Zotero library.")
+
+(defvar paper-qa-docs nil
+  "The current paper-qa Docs object.")
+
+(defvar paper-qa-zotero-collections nil
+  "List of Zotero collections.")
+
+(defun paper-qa-get-zotero-credentials ()
+  "Retrieve Zotero credentials from .authinfo or custom variables."
+  (let* ((auth-info (auth-source-search :host "api.zotero.org" :require '(:user :secret) :max 1))
+         (stored-user (plist-get (car auth-info) :user))
+         (stored-key (funcall (plist-get (car auth-info) :secret))))
+    (list (or stored-user paper-qa-zotero-user-id (getenv "ZOTERO_USER_ID"))
+          (or stored-key paper-qa-zotero-api-key (getenv "ZOTERO_API_KEY")))))
+
+(defun paper-qa-init ()
+  "Initialize paper-qa kernel and Zotero integration."
+  (interactive)
+  (let* ((credentials (paper-qa-get-zotero-credentials))
+         (user-id (car credentials))
+         (api-key (cadr credentials)))
+    (unless (and user-id api-key)
+      (error "Zotero credentials not found. Please set them in .authinfo or customize paper-qa-zotero-user-id and paper-qa-zotero-api-key"))
+    (setq paper-qa-kernel (jupyter-run-repl paper-qa-python-command nil nil))
+    (jupyter-repl-associate-buffer paper-qa-kernel)
+    (jupyter-send-code-cell paper-qa-kernel
+     (format "import os
+import paperqa
+from paperqa import Docs
+from paperqa.contrib import ZoteroDB
+os.environ['ZOTERO_USER_ID'] = '%s'
+os.environ['ZOTERO_API_KEY'] = '%s'
+zotero_db = ZoteroDB()
+docs = Docs()
+
+def get_collections():
+    collections = zotero_db.collections()
+    return [c['data']['name'] for c in collections]
+
+collections = get_collections()" user-id api-key))
+    (setq paper-qa-docs t)
+    (setq paper-qa-zotero-collections
+          (jupyter-eval "collections" :cell-type :code))))
+
+;; ... (rest of the functions remain the same as in the previous version) ...
+
+(provide 'paper-qa)
+
+;;; paper-qa.el ends here
